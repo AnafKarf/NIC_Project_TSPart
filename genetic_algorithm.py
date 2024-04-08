@@ -242,7 +242,7 @@ class TSP_GA:
         Process the input image for TSP solving.
         '''
         image = Image.open(self.image_path).convert('L')
-        pixel_image = getPixels(image, ds=1)
+        pixel_image = getPixels(image, ds=3)
         ditherer = DitheringMaker()
         dithered_image = ditherer.make_dithering(pixel_image)
         self.vertices = get_vertices(dithered_image)
@@ -306,7 +306,7 @@ class TSP_GA:
                         if self.distance_matrix[ind[i-1]][ind[i]] + self.distance_matrix[ind[j-1]][ind[j]] > self.distance_matrix[ind[i-1]][ind[j-1]] + self.distance_matrix[ind[i]][ind[j]]:
                             ind[i:j] = ind[i:j][::-1]  # Reverse the segment
                             improved = True
-            ind.fitness.values = total_distance(ind)
+            ind.fitness.values = self.total_distance(ind)
 
     def solve(self):
         self.process_image()
