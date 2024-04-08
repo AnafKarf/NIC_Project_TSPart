@@ -1,16 +1,14 @@
 import numpy as np
-from sklearn.neighbors import NearestNeighbors
 import matplotlib.pyplot as plt
 from PIL import Image
 import copy
 import random
-import io
 
 
 class DitheringMaker:
     '''
     Performs dithering on an image using the classical Floyd-Steinberg dithering algorithm. The
-    dithering isn't applied to the last row or the edge columns. Instead the last row and edge
+    dithering isn't applied to the last row or the edge columns. Instead, the last row and edge
     columns are made all white as this will later not add any vertices when we extract vertices
     from the dithering.
 
@@ -92,7 +90,6 @@ class DitheringMaker:
         self.dithering[:, -1] = 255
         self.dithering[-1, :] = 255
 
-
         # Convert dithering to Numpy array of Int.
 
         self.dithering = self.dithering.astype('int')
@@ -155,6 +152,7 @@ class DitheringMaker:
         '''
 
         self.dithering[row + self.row_disp, col + self.col_disp] += error * self.diffusion_prop
+
 
 def get_vertices(dithering):
     '''
@@ -225,7 +223,45 @@ def getPixels(image, ds=1):
 
 
 class SimulatedAnnealing:
-    def __init__(self, dots, temperature = None, max_iter = None):
+    """
+    Performs the simulating annealing method, where the step size changes to allow both exploration and exploitation.
+
+    Members
+    -------
+    dots : 2d Array of floats
+        Array of coordinates of dots in dithered image
+
+    distance_matrix: 2d Array of floats
+        Array of distances between corresponding dots
+
+    path : Array of Int
+        current path found by the algorithm
+
+    current_length : Float
+        length of current path
+
+    temperature: Float
+        starting temperature of algorithm
+
+    max_iter: Int
+        number of iterations performed by the algorithm
+
+    best_path: Array of Int
+        Best path found by the algorithm
+
+    best_path_length: Float
+        Length of the best path found by the algorithm
+    """
+    def __init__(self, dots, temperature=None, max_iter=None):
+        """
+        Initialization of SimulatedAnnealing class. Creates the distance matrix based on dots.
+        :param dots: 2d Array of Float
+            Coordinates of dots in dithered image
+        :param temperature: Float
+            Custom temperature value
+        :param max_iter: Int
+            Custom number of iterations
+        """
         self.dots = dots
         self.distance_matrix = [[self.calculate_distance(i, j) for j in range(len(dots))] for i in range(len(dots))]
         self.path = self.greedy_path()
@@ -235,8 +271,17 @@ class SimulatedAnnealing:
         self.best_path = self.path
         self.best_path_length = self.current_length
 
-
-    def solveTSP(self, verbose = False):
+    def solveTSP(self, verbose=False):
+        """
+        Main algorithm for Simulated Annealing.
+        For number of iterations, tries to place every dot in path differently, to get better solution.
+        Decreases the temperature every iteration, unless there is no improvement.
+        In that case increases the temperature.
+        :param verbose: Bool
+            Should the information about iterations and reheating be printed
+        :return: Array of Int
+            Best path found by the algorithm
+        """
         temperature = self.temperature
         change = True
         for i in range(self.max_iter):
@@ -255,6 +300,18 @@ class SimulatedAnnealing:
         return self.best_path
 
     def change_point(self, i, j, temperature):
+        """
+        Function to try and change position of dots in path.
+        Either reverses segment of path, or swaps positions of input dots with some two consecutive ones.
+        :param i: Int
+            First dot to be replaced
+        :param j: Int
+            Second dot to be replaces, usually consecutive in the path
+        :param temperature: Double
+            Current temperature
+        :return: Bool
+            Was anything changed in the path
+        """
         new_path = copy.copy(self.path)
         if random.random() < 0.5 and i != len(self.dots) - 1:
             last = random.randint(i+1, len(self.dots) - 1)
@@ -285,15 +342,36 @@ class SimulatedAnnealing:
             return False
 
     def calculate_distance(self, i, j):
+        """
+        Function to calculate Euclidian distance between dots
+        :param i: Int
+            Index of first dot
+        :param j: Int
+            Index of second dot
+        :return: FLoat
+            Distance between dots
+        """
         return ((self.dots[i][0] - self.dots[j][0]) ** 2 + (self.dots[i][1] - self.dots[j][1]) ** 2) ** 0.5
 
     def calculate_path_length(self, path):
+        """
+        Function to calculate length of the path
+        :param path: Array of Int
+            Path
+        :return: Float
+            Length of the path
+        """
         length = self.distance_matrix[path[len(path) - 1]][path[0]]
         for i in range(len(path) - 1):
             length = length + self.distance_matrix[path[i]][path[i + 1]]
         return length
 
     def plot_path(self, path):
+        """
+        Function to plot the path
+        :param path: Array of Int
+            Path
+        """
         x = []
         y = []
         for dot in path:
@@ -305,6 +383,12 @@ class SimulatedAnnealing:
         plt.show()
 
     def greedy_path(self):
+        """
+        Function to initialize first path using greedy approach.
+        Gets nearest dot not in the path for each dot.
+        :return: Array of Int
+            Proposed path
+        """
         current = 0
         path = [0]
         while len(path) != len(self.dots):
@@ -320,11 +404,16 @@ class SimulatedAnnealing:
 
 
 if __name__ == '__main__':
+    # Open the test image
     image = Image.open('flower.png').convert('L')
+    # For now the function from the internet to get pixels is used
     pixel_image = getPixels(image, ds=5)
+    # For now the function from the internet to make dithering is used
     ditherer = DitheringMaker()
     dithered_image = ditherer.make_dithering(pixel_image)
     vertices = get_vertices(dithered_image)
+    # Perform Simulated Annealing on given dots
     annealer = SimulatedAnnealing(vertices)
     best_path = annealer.solveTSP(verbose=True)
+    # Draw the result
     annealer.plot_path(best_path)
