@@ -326,6 +326,8 @@ class TSP_GA:
                 ind.fitness.values = fit
             population = self.toolbox.select(offspring, len(population))
             self.apply_two_opt(population)
+            best_ind = tools.selBest(population, 1)[0]
+            print("Iteration: %s\nWith fitness: %s" % (gen, best_ind.fitness.values))
 
         best_ind = tools.selBest(population, 1)[0]
         print("Best individual is: %s\nWith fitness: %s" % (best_ind, best_ind.fitness.values))
