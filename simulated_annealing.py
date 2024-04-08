@@ -227,30 +227,38 @@ def getPixels(image, ds=1):
 class SimulatedAnnealing:
     def __init__(self, dots, temperature = None, max_iter = None):
         self.dots = dots
-        self.path = [i for i in range(len(dots))]
         self.distance_matrix = [[self.calculate_distance(i, j) for j in range(len(dots))] for i in range(len(dots))]
-        self.temperature = max(max(x) for x in dots) * 2 if not temperature else temperature
-        self.max_iter = len(dots) if not max_iter else max_iter
+        self.path = self.greedy_path()
         self.current_length = self.calculate_path_length(self.path)
+        self.temperature = self.current_length ** 0.5 if not temperature else temperature
+        self.max_iter = len(dots) * 2 if not max_iter else max_iter
         self.best_path = self.path
         self.best_path_length = self.current_length
 
 
     def solveTSP(self, verbose = False):
+        temperature = self.temperature
+        change = True
         for i in range(self.max_iter):
-            temperature = (self.max_iter - i) * self.temperature / self.max_iter
+            if not change:
+                temperature = temperature * 2
+                if verbose:
+                    print('Heating...')
+            else:
+                temperature = temperature * 0.5
+            change = False
             if verbose:
                 print('Iteration:', i, 'best path:', self.best_path_length, 'current_path', self.current_length)
             for j in range(len(self.dots) - 1):
-                self.change_point(j, j + 1, temperature)
-            self.change_point(len(self.dots) - 1, 0, temperature)
+                change = self.change_point(j, j + 1, temperature) or change
+            change = self.change_point(len(self.dots) - 1, 0, temperature) or change
         return self.best_path
 
     def change_point(self, i, j, temperature):
         new_path = copy.copy(self.path)
-        if random.random() < 0.5:
-            new_path[i] = copy.copy(self.path[j])
-            new_path[j] = copy.copy(self.path[i])
+        if random.random() < 0.5 and i != len(self.dots) - 1:
+            last = random.randint(i+1, len(self.dots) - 1)
+            new_path[i:last] = reversed(new_path[i:last])
         else:
             change = random.randint(0, len(self.path) - 2)
             while (change == i) or (change == j) or (i == change + 1) or (j == change + 1):
@@ -268,18 +276,21 @@ class SimulatedAnnealing:
             if new_length < self.best_path_length:
                 self.best_path = new_path
                 self.best_path_length = new_length
+            return True
         else:
-            if random.random() < np.exp(-(change / temperature)):
+            if change != 0.0 and random.random() < np.exp(-(change / temperature)):
                 self.path = new_path
                 self.current_length = new_length
+                return True
+            return False
 
     def calculate_distance(self, i, j):
         return ((self.dots[i][0] - self.dots[j][0]) ** 2 + (self.dots[i][1] - self.dots[j][1]) ** 2) ** 0.5
 
     def calculate_path_length(self, path):
-        length = self.distance_matrix[len(path) - 1][0]
+        length = self.distance_matrix[path[len(path) - 1]][path[0]]
         for i in range(len(path) - 1):
-            length = length + self.distance_matrix[i][i + 1]
+            length = length + self.distance_matrix[path[i]][path[i + 1]]
         return length
 
     def plot_path(self, path):
@@ -293,14 +304,27 @@ class SimulatedAnnealing:
         plt.plot(x, y)
         plt.show()
 
+    def greedy_path(self):
+        current = 0
+        path = [0]
+        while len(path) != len(self.dots):
+            min_step = max(max(x) for x in self.dots)
+            next_step = -1
+            for i in range(len(self.dots)):
+                if self.distance_matrix[current][i] < min_step and i not in path:
+                    min_step = self.distance_matrix[current][i]
+                    next_step = i
+            path.append(next_step)
+            current = next_step
+        return path
+
 
 if __name__ == '__main__':
-    #image = Image.open('flower.png').convert('L')
-    #pixel_image = getPixels(image, ds=1)
-    #ditherer = DitheringMaker()
-    #dithered_image = ditherer.make_dithering(pixel_image)
-    #vertices = get_vertices(dithered_image)
-    vertices = [[x, y] for x, y in zip(np.random.randint(0, 100, 20), np.random.randint(0, 100, 20))]
-    annealer = SimulatedAnnealing(vertices, max_iter=1000)
-    best_path = annealer.solveTSP()
+    image = Image.open('flower.png').convert('L')
+    pixel_image = getPixels(image, ds=5)
+    ditherer = DitheringMaker()
+    dithered_image = ditherer.make_dithering(pixel_image)
+    vertices = get_vertices(dithered_image)
+    annealer = SimulatedAnnealing(vertices)
+    best_path = annealer.solveTSP(verbose=True)
     annealer.plot_path(best_path)
