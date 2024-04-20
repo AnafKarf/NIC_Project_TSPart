@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 import copy
 import random
+from tqdm import tqdm
 
 
 class DitheringMaker:
@@ -252,7 +253,7 @@ class SimulatedAnnealing:
     best_path_length: Float
         Length of the best path found by the algorithm
     """
-    def __init__(self, dots, temperature=None, max_iter=None):
+    def __init__(self, dots, temperature=None, max_iter=None, greedy=False):
         """
         Initialization of SimulatedAnnealing class. Creates the distance matrix based on dots.
         :param dots: 2d Array of Float
@@ -264,10 +265,10 @@ class SimulatedAnnealing:
         """
         self.dots = dots
         self.distance_matrix = [[self.calculate_distance(i, j) for j in range(len(dots))] for i in range(len(dots))]
-        self.path = self.greedy_path()
+        self.path = self.greedy_path() if greedy else [i for i in range(len(dots))]
         self.current_length = self.calculate_path_length(self.path)
-        self.temperature = self.current_length ** 0.5 if not temperature else temperature
-        self.max_iter = len(dots) * 2 if not max_iter else max_iter
+        self.temperature = self.current_length if not temperature else temperature
+        self.max_iter = len(dots) ** 2 if not max_iter else max_iter
         self.best_path = self.path
         self.best_path_length = self.current_length
 
@@ -284,19 +285,18 @@ class SimulatedAnnealing:
         """
         temperature = self.temperature
         change = True
-        for i in range(self.max_iter):
-            if not change:
-                temperature = temperature * 2
-                if verbose:
-                    print('Heating...')
+        for i in tqdm(range(self.max_iter)):
+            if change:
+                temperature = temperature * (1 - 1/len(self.path))
             else:
-                temperature = temperature * 0.5
-            change = False
+                temperature = temperature * (1 + 1/self.max_iter)
             if verbose:
                 print('Iteration:', i, 'best path:', self.best_path_length, 'current_path', self.current_length)
-            for j in range(len(self.dots) - 1):
-                change = self.change_point(j, j + 1, temperature) or change
-            change = self.change_point(len(self.dots) - 1, 0, temperature) or change
+            to_change_1 = np.random.randint(0, high=len(self.path))
+            to_change_2 = np.random.randint(0, high=len(self.path))
+            while to_change_1 == to_change_2:
+                to_change_2 = np.random.randint(0, high=len(self.path))
+            change = self.change_point(to_change_1, to_change_2, temperature)
         return self.best_path
 
     def change_point(self, i, j, temperature):
@@ -306,25 +306,22 @@ class SimulatedAnnealing:
         :param i: Int
             First dot to be replaced
         :param j: Int
-            Second dot to be replaces, usually consecutive in the path
+            Second dot to be replaced, usually consecutive in the path
         :param temperature: Double
             Current temperature
         :return: Bool
             Was anything changed in the path
         """
         new_path = copy.copy(self.path)
-        if random.random() < 0.5 and i != len(self.dots) - 1:
-            last = random.randint(i+1, len(self.dots) - 1)
-            new_path[i:last] = reversed(new_path[i:last])
+        if random.random() < 0.5:
+            new_path[i] = self.path[j]
+            new_path[j] = self.path[i]
         else:
-            change = random.randint(0, len(self.path) - 2)
-            while (change == i) or (change == j) or (i == change + 1) or (j == change + 1):
-                change = random.randint(0, len(self.path) - 2)
-            else:
-                new_path[i] = copy.copy(self.path[change])
-                new_path[j] = copy.copy(self.path[change + 1])
-                new_path[change] = copy.copy(self.path[i])
-                new_path[change + 1] = copy.copy(self.path[j])
+            start = i
+            if i == len(self.path) - 1:
+                start = j
+            end = np.random.randint(start, high=len(self.path))
+            new_path[start:end] = reversed(self.path[start:end])
         new_length = self.calculate_path_length(new_path)
         change = new_length - self.current_length
         if change < 0:
@@ -333,13 +330,13 @@ class SimulatedAnnealing:
             if new_length < self.best_path_length:
                 self.best_path = new_path
                 self.best_path_length = new_length
-            return True
+                return True
         else:
             if change != 0.0 and random.random() < np.exp(-(change / temperature)):
                 self.path = new_path
                 self.current_length = new_length
                 return True
-            return False
+        return False
 
     def calculate_distance(self, i, j):
         """
@@ -414,6 +411,6 @@ if __name__ == '__main__':
     vertices = get_vertices(dithered_image)
     # Perform Simulated Annealing on given dots
     annealer = SimulatedAnnealing(vertices)
-    best_path = annealer.solveTSP(verbose=True)
+    best_path = annealer.solveTSP()
     # Draw the result
     annealer.plot_path(best_path)
