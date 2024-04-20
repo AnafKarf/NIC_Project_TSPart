@@ -1,8 +1,8 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from deap import base, creator, tools, algorithms
 import random
+from deap import base, creator, tools, algorithms
 from PIL import Image
+import matplotlib.pyplot as plt
 
 class DitheringMaker:
     '''
@@ -218,126 +218,92 @@ def getPixels(image, ds=1):
     return np.array(pixels)
 
 class TSP_GA:
-    def __init__(self, image_path, population_size=300, cx_pb=0.7, mut_pb=0.2, ngen=10, two_opt_percentage=0.3):
+    def __init__(self, image_path, population_size=200, ngen=10):
         self.image_path = image_path
         self.population_size = population_size
-        self.cx_pb = cx_pb
-        self.mut_pb = mut_pb
         self.ngen = ngen
-        self.two_opt_percentage = two_opt_percentage
-        
-
-        creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
-        creator.create("Individual", list, fitness=creator.FitnessMin)
-
         self.toolbox = base.Toolbox()
+        if not hasattr(creator, "FitnessMin"):
+            creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
+            creator.create("Individual", list, fitness=creator.FitnessMin)
 
-        # Initialize for DEAP 
-        self.toolbox.register("mate", tools.cxOrdered)
-        self.toolbox.register("mutate", self.swap_mutation, indpb=0.05)
-        self.toolbox.register("select", tools.selRoulette)
-
-    def process_image(self):
+    def evaluate(self, individual):
         '''
-        Process the input image for TSP solving.
+        Calculate the total length of the path
         '''
-        image = Image.open(self.image_path).convert('L')
-        pixel_image = getPixels(image, ds=3)
-        ditherer = DitheringMaker()
-        dithered_image = ditherer.make_dithering(pixel_image)
-        self.vertices = get_vertices(dithered_image)
-        self.distance_matrix = self.calculate_distance_matrix(self.vertices)
-
-        self.toolbox.register("indices", random.sample, range(len(self.vertices)), len(self.vertices))
-        self.toolbox.register("individual", tools.initIterate, creator.Individual, self.toolbox.indices)
-        self.toolbox.register("population", tools.initRepeat, list, self.toolbox.individual)
-        self.toolbox.register("evaluate", self.total_distance)
+        distance_matrix = self.distance_matrix
+        tour_length = sum(distance_matrix[individual[i - 1], individual[i]] for i in range(len(individual)))
+        return (tour_length,)
 
     def calculate_distance_matrix(self, vertices):
         '''
-        Calculate the distance matrix between vertices.
+        Calculate the euclidean distance matrix between vertices.
         '''
-        return np.sqrt(((np.array(vertices)[:, np.newaxis, :] - np.array(vertices)[np.newaxis, :, :]) ** 2).sum(axis=2))
+        return np.sqrt(((vertices[:, np.newaxis, :] - vertices[np.newaxis, :, :]) ** 2).sum(axis=2))
 
-    def total_distance(self, individual):
-        '''
-        Calculate the total distance of a given individual's path.
-        '''
-        return sum(self.distance_matrix[individual[i-1], individual[i]] for i in range(len(individual))),
+    def two_opt(self, individual):
+      '''
+      Apply 2-opt optimization to the population
+      '''
+      improved = True
+      while improved:
+          improved = False
+          for i in range(1, len(individual) - 2):
+              for j in range(i + 2, len(individual) - 1):  
+                  if self.distance_matrix[individual[i - 1]][individual[i]] + \
+                    self.distance_matrix[individual[j]][individual[j + 1]] > \
+                    self.distance_matrix[individual[i - 1]][individual[j]] + \
+                    self.distance_matrix[individual[i]][individual[j + 1]]:
+                      individual[i:j + 1] = reversed(individual[i:j + 1])
+                      improved = True
+      return individual,
 
-    def swap_mutation(self, individual, indpb):
+    def setup_toolbox(self):
         '''
-        Perform a swap mutation on an individual.
-
-        Parameters
-        ----------
-        individual : list
-            The individual to mutate.
-
-        indpb : float
-            The probability of mutation for each gene.
-
-        Returns
-        -------
-        tuple
-            A tuple containing the mutated individual.
+        Setup DEAP
         '''
-        for i in range(len(individual)):
-            if random.random() < indpb:
-                swap_idx = random.randint(0, len(individual)-1)
-                individual[i], individual[swap_idx] = individual[swap_idx], individual[i]
-        return individual,
+        self.toolbox.register("indices", random.sample, range(len(self.vertices)), len(self.vertices))
+        self.toolbox.register("individual", tools.initIterate, creator.Individual, self.toolbox.indices)
+        self.toolbox.register("population", tools.initRepeat, list, self.toolbox.individual)
+        self.toolbox.register("mate", tools.cxOrdered)
+        self.toolbox.register("mutate", self.two_opt)
+        self.toolbox.register("select", tools.selTournament, tournsize=3)
+        self.toolbox.register("evaluate", self.evaluate)
 
-    def apply_two_opt(self, population, percentage=0.2):
+    def process_image(self):
         '''
-        Apply 2-opt optimization to a percentage of the population.
+        Process the input image for TSP solving
         '''
-        num_individuals = int(len(population) * percentage)
-        selected_indices = random.sample(range(len(population)), num_individuals)
-    
-        for idx in selected_indices:
-            ind = population[idx]
-            improved = True
-            while improved:
-                improved = False
-                for i in range(1, len(ind) - 1):
-                    for j in range(i + 1, len(ind)):
-                        if j-i == 1: continue  # Skip adjacent nodes
-                        if self.distance_matrix[ind[i-1]][ind[i]] + self.distance_matrix[ind[j-1]][ind[j]] > self.distance_matrix[ind[i-1]][ind[j-1]] + self.distance_matrix[ind[i]][ind[j]]:
-                            ind[i:j] = ind[i:j][::-1]  # Reverse the segment
-                            improved = True
-            ind.fitness.values = self.total_distance(ind)
+        image = Image.open(self.image_path).convert('L')
+        pixels = getPixels(image, ds=3)
+        ditherer = DitheringMaker()
+        dithered_image = ditherer.make_dithering(pixels)
+        self.vertices = get_vertices(dithered_image)
+        self.distance_matrix = self.calculate_distance_matrix(self.vertices)
+        self.setup_toolbox()
+
+    def ga_algorithm(self):
+        pop = self.toolbox.population(n=self.population_size)
+        hof = tools.HallOfFame(1)
+        stats = tools.Statistics(lambda ind: ind.fitness.values)
+        stats.register("min", np.min)
+        stats.register("avg", np.average)
+        algorithms.eaSimple(pop, self.toolbox, cxpb=0.7, mutpb=0.2, ngen=self.ngen, stats=stats, halloffame=hof, verbose=True)
+        return hof.items[0]
 
     def solve(self):
+        '''
+        Solver
+        '''
         self.process_image()
-        population = self.toolbox.population(n=self.population_size)
+        best_solution = self.ga_algorithm()
+        self.plot_path(best_solution)
 
-        hof = tools.HallOfFame(1)
-        stats = tools.Statistics(key=lambda ind: ind.fitness.values)
-        stats.register("avg", np.mean)
-        stats.register("std", np.std)
-        stats.register("min", np.min)
-
-        for gen in range(self.ngen):
-            offspring = algorithms.varAnd(population, self.toolbox, self.cx_pb, self.mut_pb)
-            invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
-            fitnesses = map(self.toolbox.evaluate, invalid_ind)
-            for ind, fit in zip(invalid_ind, fitnesses):
-                ind.fitness.values = fit
-            population = self.toolbox.select(offspring, len(population))
-            self.apply_two_opt(population)
-            best_ind = tools.selBest(population, 1)[0]
-            print("Iteration: %s\nWith fitness: %s" % (gen, best_ind.fitness.values))
-
-        best_ind = tools.selBest(population, 1)[0]
-        print("Best individual is: %s\nWith fitness: %s" % (best_ind, best_ind.fitness.values))
-        self.plot_path(best_ind)
-
-    def plot_path(self, best_ind):
+    def plot_path(self, best_solution):
         '''
         Plot the best path found by the solver.
         '''
-        best_path = [self.vertices[i] for i in best_ind] + [self.vertices[best_ind[0]]]
+        best_path = [self.vertices[i] for i in best_solution] + [self.vertices[best_solution[0]]]
         x, y = zip(*best_path)
         plt.figure(figsize=(10, 10))
         plt.plot(x, y, '-o', markersize=3, linewidth=1)
@@ -345,5 +311,5 @@ class TSP_GA:
         plt.show()
 
 if __name__ == "__main__":
-    solver = TSP_GA("flower.png")
+    solver = TSP_GA("flower.png", population_size=50, ngen=10)
     solver.solve()
