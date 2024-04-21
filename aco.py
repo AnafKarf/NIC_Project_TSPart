@@ -282,7 +282,8 @@ class ACO:
         return self.best_path
 
     def calculate_path_length(self, path):
-        return sum([self.distance_matrix[path[i]][path[i+1]] for i in range(len(path)-1)])
+        return sum([self.distance_matrix[path[i]][path[i+1]] for i in range(len(path)-1)])\
+            + self.distance_matrix[path[len(path) - 1]][path[0]]
 
     def plot_path(self, path):
         """
@@ -305,7 +306,7 @@ if __name__ == '__main__':
     # Open the test image
     image = Image.open('flower.png').convert('L')
     # For now the function from the internet to get pixels is used
-    pixel_image = getPixels(image, ds=3)
+    pixel_image = getPixels(image, ds=5)
     # For now the function from the internet to make dithering is used
     ditherer = DitheringMaker()
     dithered_image = ditherer.make_dithering(pixel_image)
