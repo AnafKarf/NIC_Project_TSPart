@@ -311,5 +311,5 @@ class TSP_GA:
         plt.show()
 
 if __name__ == "__main__":
-    solver = TSP_GA("flower.png", population_size=50, ngen=10)
+    solver = TSP_GA("../images/flower.png", population_size=50, ngen=10)
     solver.solve()

@@ -317,5 +317,5 @@ class TSP_ABC:
         self.plot_path(best_solution)
 
 if __name__ == "__main__":
-    solver = TSP_ABC("flower.png", num_bees=100, max_cycles=15000)
+    solver = TSP_ABC("../images/flower.png", num_bees=100, max_cycles=15000)
     solver.solve()

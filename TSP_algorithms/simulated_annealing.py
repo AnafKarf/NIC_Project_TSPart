@@ -402,7 +402,7 @@ class SimulatedAnnealing:
 
 if __name__ == '__main__':
     # Open the test image
-    image = Image.open('flower.png').convert('L')
+    image = Image.open('../images/flower.png').convert('L')
     # For now the function from the internet to get pixels is used
     pixel_image = getPixels(image, ds=5)
     # For now the function from the internet to make dithering is used
