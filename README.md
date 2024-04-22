@@ -6,7 +6,7 @@
 - Nika Lobanova, B22-GD-01
 
 ## Project description
-This project is aimed to find the best way to draw TSP Art using metaheuristics inspired by nature, as well as examine possible ways to make TSP Art more colorful. We applied dithering to images from ![CalTech 101](https://data.caltech.edu/records/mzrjq-6wc02) dataset with removed background, and then tried different nature inspired algorithms to solve TSP on given points. Afterwards, we added colors to the resulting images. 
+This project is aimed to find the best way to draw TSP Art using metaheuristics inspired by nature, as well as examine possible ways to make TSP Art more colorful. We applied dithering to images from [CalTech 101](https://data.caltech.edu/records/mzrjq-6wc02) dataset with removed background, and then tried different nature inspired algorithms to solve TSP on given points. Afterwards, we added colors to the resulting images. 
 The following methods were used for solving TSP Art:
 - Ant Colony Optimization
 - Artificial Bee Colony
