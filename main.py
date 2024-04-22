@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning) 
+
 import os
 import cv2
 import numpy as np
@@ -40,16 +43,18 @@ def load_dataset():
 def remove_background(path):
     """
     The function `remove_background` takes an image file path as input, removes the background from the
-    image, and returns the resulting image.
+    image, fills the background with white color, resizes the image, and returns the modified image.
     
     :param path: The `path` parameter in the `remove_background` function is a string that represents
-    the file path to an image file. This image file will be opened and processed to remove the
-    background
-    :return: The function `remove_background` is returning the output image after removing the
-    background from the input image.
+    the file path to an image file. This function seems to be designed to remove the background from an
+    image using OpenCV and then resize the resulting image
+    :return: the variable `output`, which is the result of processing the input image to remove the
+    background and then resizing it.
     """
     input = Image.open(path)
     output = remove(input)
+    cv2.floodFill(output, None, (0, 0), (255, 255, 255))
+    img = cv2.resize(output, (0,0), fx = 0.7, fy = 0.7)
     return output
 
 
@@ -372,5 +377,6 @@ class TSP_GA:
         fig.show()
         
 
+# We chose GA due to it's outstanding performance in our experiments
 solver = TSP_GA("images/small_lotus.png")
 solver.solve_color()
