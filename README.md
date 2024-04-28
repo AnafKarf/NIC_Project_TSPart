@@ -14,20 +14,23 @@ The following methods were used for solving TSP Art:
 - Simulated Annealing
 
 ## Contents
-### abc_alg.py
-This file provides an impementation for Artifical Bee Colony metaheuristic to solve TSP and create TSP Art based on the solution.
+### TSP_algorithms
+This directory contains implementations of different metaheuristics for solving Travelling Salesman Problem
+- abc_alg.py - Artificial Bee Colony metaheuristic, by Nika Lobanova
+- aco.py - Ant Colony Optimization metaheuristic, by Anastasiia Shvets
+- genetic_algorithm.py - Genetic Algorithm metaheuristic, by Nika Lobanova
+- simulated_annealing.py - Simulated Annealing metaheuristic, by Anastasiia Shvets
 
-### aco.py
-This file provides an impementation for Ant Colony Optimization metaheuristic to solve TSP and create TSP Art based on the solution.
+### experiments
+This directory contains IPYNB files with experiments conducted during the project.
+- ABC_algorithm.ipynb, ACO.ipynb, GA_algorithm.ipynb, Simulated_Annealing.ipynb - experiments measuring the time it takes for different metaheuristic to solve the same problem (transform image of a lotus into TSP Art), by Nika Lobanova and Anastasiia Shvets
+- dithering_and_colors_experiment.ipynb - experiments with different dithering algorithms, grayscale images, background removal and techniques of adding color to TSP Art, by Sofia Tkachenko
 
-### dithering_and_colors_experiment.ipynb
-This notebook shows how color can be added to TSP Art, as well as what dithering methods can be used to transform the original image into points.
+### images
+This directory contains images used during the experiments.
 
-### genetic_algorithm.py
-This file provides an implementation for Genetic Algorithm metaheuristic to solve TSP and create TSP Art based on the solution.
+### main.py
+This file contains the best metaheuristic (Genetic Algorithm) and shows how the project works overall.
 
-### simulated_annealing.py
-This file provides implementation for Simulated Annealing metaheuristic for solving TSP and creating TSP Art bsed on the solution.
-
-## Comments
-For now, the dithering algorithm from the [internet](https://github.com/MatthewMcGonagle/TSP_PictureMaker/blob/master/tsp_draw/dithering.py) is used.
+### requirements.txt
+File containing python packages needed for the project to work.
