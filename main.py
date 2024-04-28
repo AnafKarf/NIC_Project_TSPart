@@ -175,7 +175,7 @@ class TSP_GA:
         """
         The function initializes parameters for an evolutionary algorithm with a specified image path,
         population size, and number of generations.
-        
+
         :param image_path: The `image_path` parameter in the `__init__` method is a string that
         represents the path to an image file. This path will be used by the class or function to load
         and process the image data
@@ -192,6 +192,7 @@ class TSP_GA:
         self.population_size = population_size
         self.ngen = ngen
         self.toolbox = base.Toolbox()
+        self.best_paths = []
         if not hasattr(creator, "FitnessMin"):
             creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
             creator.create("Individual", list, fitness=creator.FitnessMin)
@@ -200,7 +201,7 @@ class TSP_GA:
     def evaluate(self, individual):
         """
         The function evaluates the total length of a path based on a given individual's sequence.
-        
+
         :param individual: The `individual` parameter in the `evaluate` function represents a specific
         path or route in a traveling salesman problem. It is a list of nodes representing the order in
         which the salesman visits the cities. The function calculates the total length of the path by
@@ -215,7 +216,7 @@ class TSP_GA:
     def calculate_distance_matrix(self, vertices):
         """
         The function calculates the Euclidean distance matrix between given vertices.
-        
+
         :param vertices: The `vertices` parameter is a numpy array containing the coordinates of the
         vertices in a multidimensional space. Each row of the array represents the coordinates of a
         single vertex. The function `calculate_distance_matrix` calculates the Euclidean distance
@@ -230,7 +231,7 @@ class TSP_GA:
         """
         The `two_opt` function implements a 2-opt optimization algorithm to improve a given individual's
         path based on a distance matrix.
-        
+
         :param individual: The `individual` parameter in the `two_opt` function represents a list that
         contains the order of visiting nodes in a tour. Each element in the list represents a node, and
         the order of the nodes determines the sequence of visiting them in the tour. The function
@@ -270,7 +271,7 @@ class TSP_GA:
         """
         The `process_image` function processes an input image for TSP solving by downsampling, dithering,
         extracting vertices, calculating distance matrix, and setting up a toolbox.
-        
+
         :param image: The `image` parameter is the input image that will be processed for solving the
         Traveling Salesman Problem (TSP). The image will be used to extract pixels, create a dithered
         version of the image, obtain vertices from the dithered image, and calculate a distance matrix based
@@ -324,7 +325,6 @@ class TSP_GA:
         g_pil = Image.fromarray(g)
         r_pil = Image.fromarray(r)
 
-        best_paths = []
         counter = 0
         colors = ['blue', 'green', 'red']
 
@@ -332,11 +332,11 @@ class TSP_GA:
             print('Solving TSP for', colors[counter])
             self.process_image(image)
             best_solution = self.ga_algorithm()
-            best_paths.append([self.vertices[i] for i in best_solution] + [self.vertices[best_solution[0]]])
+            self.best_paths.append([self.vertices[i] for i in best_solution] + [self.vertices[best_solution[0]]])
             self.plot_path(best_solution)
             counter += 1
 
-        self.plot_path_color(best_paths)
+        self.plot_path_color(self.best_paths)
 
 
     def plot_path(self, best_solution):
@@ -345,8 +345,8 @@ class TSP_GA:
         '''
         best_path = [self.vertices[i] for i in best_solution] + [self.vertices[best_solution[0]]]
         x, y = zip(*best_path)
-        plt.figure(figsize=(10, 10))
-        plt.plot(x, y, '-o', markersize=3, linewidth=1)
+        plt.figure()
+        plt.plot(x, y, '-o', markersize=2, linewidth=1)
         plt.title("Best Path")
         plt.show()
 
@@ -354,7 +354,7 @@ class TSP_GA:
     def plot_path_color(self, best_paths):
         """
         The function `plot_path_color` plots three paths in different colors on a black background.
-        
+
         :param best_paths: Solutions for TSPs of each color respectively.
         """
         x_b, y_b = zip(*best_paths[0])
@@ -362,20 +362,20 @@ class TSP_GA:
         x_g, y_g = zip(*best_paths[1])
         x_r, y_r = zip(*best_paths[2])
 
-        fig = plt.figure(figsize=(10, 10))
-        fig.set_facecolor("black")
+        fig, ax = plt.subplots()
+        ax.set_facecolor('black')
 
         # Plotting all the curves simultaneously
-        fig.plot(x_r, y_r, '-o', markersize=3, linewidth=1, alpha=0.9,
+        ax.plot(x_r, y_r, '-o', markersize=2, linewidth=1, alpha=0.8,
                  color='cyan')  # inverse for red
-        fig.plot(x_g, y_g, '-o', markersize=3, linewidth=1, alpha=0.9,
+        ax.plot(x_g, y_g, '-o', markersize=2, linewidth=1, alpha=0.8,
                  color='magenta') # inverse for green
-        fig.plot(x_b, y_b, '-o', markersize=3, linewidth=1, alpha=0.9,
+        ax.plot(x_b, y_b, '-o', markersize=2, linewidth=1, alpha=0.8,
                  color='yellow') # inverse for blue
 
-        fig.title("Colorful TSP art")
-        fig.show()
-        
+        plt.title("Colorful TSP art")
+        plt.show()
+     
 
 # We chose GA due to it's outstanding performance in our experiments
 solver = TSP_GA("images/small_lotus.png")
