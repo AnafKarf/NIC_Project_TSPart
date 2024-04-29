@@ -52,10 +52,12 @@ def remove_background(path):
     background and then resizing it.
     """
     input = Image.open(path)
-    output = remove(input)
+    pil_output = remove(input)
+    output = np.asarray(pil_output)
+    output = cv2.cvtColor(output, cv2.COLOR_BGR2RGB)
     cv2.floodFill(output, None, (0, 0), (255, 255, 255))
-    img = cv2.resize(output, (0,0), fx = 0.7, fy = 0.7)
-    return output
+    img = cv2.resize(output, (0,0), fx = 0.5, fy = 0.5)
+    return img
 
 
 class DitheringMaker:
