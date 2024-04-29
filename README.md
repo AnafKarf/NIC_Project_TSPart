@@ -25,7 +25,7 @@ This directory contains implementations of different metaheuristics for solving 
 This directory contains IPYNB files with experiments conducted during the project.
 - ABC_algorithm.ipynb, ACO.ipynb, GA_algorithm.ipynb, Simulated_Annealing.ipynb - experiments measuring the time it takes for different metaheuristic to solve the same problem (transform image of a lotus into TSP Art), by Nika Lobanova and Anastasiia Shvets
 - dithering_and_colors_experiment.ipynb - experiments with different dithering algorithms, grayscale images, background removal and techniques of adding color to TSP Art, by Sofia Tkachenko
-- experiments_with_dataset.ipynb - testing the final algorithm on multiple images from the CalTech 101 dataset, by Nika Lobanove 
+- experiments_with_dataset.ipynb - testing the final algorithm on multiple images from the CalTech 101 dataset, by Nika Lobanova
 
 ### images
 This directory contains images used during the experiments.
